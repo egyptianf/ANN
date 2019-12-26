@@ -48,16 +48,16 @@ class ReLU(Strategy, ABC):
 
 
 def test():
+    print("Sigmoid")
     sigmoid = Sigmoid()
     activation1 = Activation(sigmoid)
-    activation1.activate(np.ones(5))
-    print("Sigmoid")
-    print(activation1.strategy.y)
+    print(activation1.output(np.array([0.8305, -0.526])))
+
+
     print("ReLU")
     relu = ReLU()
     activation2 = Activation(relu)
-    activation2.activate(np.ones(5))
-    print(activation2.strategy.y)
+    print(activation2.output(np.ones(1)))
 
 
 if __name__ == '__main__':
