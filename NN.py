@@ -1,4 +1,5 @@
 import numpy as np
+import activation as ac
 
 
 class NeuralNetwork:
