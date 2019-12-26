@@ -76,6 +76,7 @@ class NeuralNetwork:
             for k in range(cols):
                 # WARNING!! This should be averaged for all input examples, update later
                 del_c = 2 * before_last_layer[k] * (a_j - y_j) * derivative_sigma
+                # So, this update is invalid
                 output_matrix[j][k] -= del_c
         self.network_matrices[-1] = output_matrix
         # Loop through the hidden layers to adjust the weight matrices
