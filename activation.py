@@ -1,5 +1,7 @@
 import abc
 import math
+from abc import ABC
+
 import numpy as np
 
 
@@ -11,6 +13,10 @@ class Activation:
     def activate(self, x_):
         self.strategy.activate(x_)
 
+    def output(self, x_):
+        self.strategy.activate(x_)
+        return self.strategy.output()
+
 
 class Strategy(metaclass=abc.ABCMeta):
     y: 'numpy array'
@@ -21,14 +27,19 @@ class Strategy(metaclass=abc.ABCMeta):
         pass
 
 
-class Sigmoid(Strategy):
+    def output(self):
+        return self.y
+
+
+class Sigmoid(Strategy, ABC):
     # Implement the algorithm using the strategy interface
     def activate(self, x_):
         self.y = np.zeros(len(x_))
         self.y = 1 / (1 + np.exp(-x_))
 
 
-class ReLU(Strategy):
+
+class ReLU(Strategy, ABC):
     # Implementation
     def activate(self, x_):
         self.y = np.zeros(len(x_))

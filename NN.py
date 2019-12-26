@@ -7,6 +7,9 @@ class NeuralNetwork:
     depth = 1
     network_matrices = []  # Last matrix is weight matrix of the output, otherwise, each hidden layer has a weight matrix
     outputv = np.zeros(1)
+    activation_function = ac.ReLU()
+    activation: 'a class'
+    activation = None
 
     def __init__(self, input_nodes, depth, hidden_layers_nodes, output_nodes):
         self.inputv = np.zeros(input_nodes)
@@ -29,10 +32,15 @@ class NeuralNetwork:
         # Initialize the output vector
         self.outputv = np.zeros(output_nodes)
 
+        # Initialize the activation function
+        self.activation = ac.Activation(self.activation_function)
+
+
     def forward_pass(self, inputv_):
         self.inputv = inputv_
         temp_vector = self.inputv
         for k in range(self.depth):
-            layer_output = (self.network_matrices[k]).dot(temp_vector)
+            z = (self.network_matrices[k]).dot(temp_vector)
+            layer_output = self.activation.output(z)
             temp_vector = layer_output
         self.outputv = temp_vector
