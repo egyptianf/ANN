@@ -3,8 +3,9 @@ import activation as ac
 
 
 class NeuralNetwork:
-    inputv = np.zeros(1)
+    learning_rate = 0.01
     depth = 1
+    inputv = np.zeros(1)
     network_matrices = []  # Last matrix is weight matrix of the output, otherwise, each hidden layer has a weight matrix
     outputv = np.zeros(1)
     desiredv = np.zeros(1)
@@ -17,7 +18,7 @@ class NeuralNetwork:
     activation: 'a class'
     activation = None
 
-    def __init__(self, input_nodes, depth, hidden_layers_nodes, output_nodes):
+    def __init__(self, input_nodes, depth, hidden_layers_nodes, output_nodes, learning_rate):
         self.inputv = np.zeros(input_nodes)
         columns = input_nodes
         self.depth = depth
@@ -41,6 +42,9 @@ class NeuralNetwork:
         # Initialize the activation function
         self.activation = ac.Activation(self.activation_function)
 
+        # Setting learning rate
+        self.learning_rate = learning_rate
+
     def cost(self, desired: 'numpy array'):
         return np.sum(np.exp2(self.outputv - desired))
 
@@ -52,14 +56,15 @@ class NeuralNetwork:
             z = (self.network_matrices[k]).dot(temp_vector)
             layer_output = self.activation.output(z)
             temp_vector = layer_output
-            # Add this layer output to the list of hidden layers
+            # Add this layer output to the list of hidden layers outputs
             if k < self.depth - 1:
-                self.hidden_layers_outputs.append(temp_vector)
+                self.hidden_layers_outputs.append(layer_output)
         self.outputv = temp_vector
 
     def backpropagate(self, x: np.array(0), y: np.array(0)):
         # Start by making a forward pass
         self.forward_pass(x)
+
         # Computer the error (mean square error)
         error = self.cost(y)
 
@@ -71,15 +76,34 @@ class NeuralNetwork:
         cols = output_matrix.shape[1]
         for j in range(rows):
             a_j = self.outputv[j]
-            derivative_sigma = a_j * (1 - a_j)  # Assuming activation is sigmoid
+            derivative_sigma = a_j * (1 - a_j)  # sigmoid
             y_j = y[j]
             for k in range(cols):
-                # WARNING!! This should be averaged for all input examples, update later
-                del_c = 2 * before_last_layer[k] * (a_j - y_j) * derivative_sigma
-                # So, this update is invalid
-                output_matrix[j][k] -= del_c
+                a_k = before_last_layer[k]
+                # Assuming stochastic gradient descent
+                del_cost = 2 * self.learning_rate * a_k * (a_j - y_j) * derivative_sigma
+                output_matrix[j][k] -= del_cost
         self.network_matrices[-1] = output_matrix
+
+
         # Loop through the hidden layers to adjust the weight matrices
+        hidden = -2
+        while hidden >= 0:
+            hidden_matrix = self.network_matrices[hidden]
+            previous_layer = self.hidden_layers_outputs[hidden]
+            rows = hidden_matrix.shape[0]
+            cols = hidden_matrix.shape[1]
+            for k in range(rows):
+
+
+                for i in range(cols):
+                    pass
+
+
+
+
+
+
 
     def backpropagation(self, epochs: int):
         for i in range(epochs):
