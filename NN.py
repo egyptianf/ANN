@@ -1,6 +1,7 @@
 import numpy as np
 import activation as ac
 
+
 class NeuralNetwork:
     learning_rate = 0.01
     depth = 1
@@ -8,15 +9,17 @@ class NeuralNetwork:
     inputv = np.zeros(1)
     network_matrices = []  # Last matrix is weight matrix of the output, otherwise, each hidden layer has a weight matrix
     outputv = np.zeros(1)
+    outputv_derivative = np.zeros(1)
     desiredv = np.zeros(1)
 
-    # A list of numpy arrays to save the outputs of hidden layers at a specific state of the network
-    hidden_layers_outputs = []
+    # A list of numpy arrays to save the outputs of layers at a specific state of the network
+    nets = []
+    nets_derivatives = []
 
     hidden_layers_errors = []  # size = d-1
 
     # Activation of all the neurons
-    activation_function = ac.Sigmoid()
+    activation_function = ac.ReLU()
     activation: 'a class'
     activation = None
 
@@ -41,6 +44,7 @@ class NeuralNetwork:
 
         # Initialize the output vector
         self.outputv = np.zeros(output_nodes)
+        self.outputv_derivative = np.zeros(output_nodes)
 
         # Initialize the activation function
         self.activation = ac.Activation(self.activation_function)
@@ -48,8 +52,8 @@ class NeuralNetwork:
         # Setting learning rate
         self.learning_rate = learning_rate
 
-    def cost(self, desired: 'numpy array'):
-        return np.sum(np.exp2(self.outputv - desired))
+    def cost(self):
+        return np.sum(np.power(self.outputv - self.desiredv, 2))
 
     def output_layer_error(self):
         return 2 * (self.outputv - self.desiredv)
@@ -57,53 +61,51 @@ class NeuralNetwork:
     def unit_error(self, l: 'layer index', k: 'unit index'):
         unit_error = 0
         # We will loop through next layer l+1
-        if (l+1) <= self.depth:
-            layer_matrix = self.network_matrices[l+1]
+        if (l + 1) <= self.depth:
+            layer_matrix = self.network_matrices[l]
             weights = layer_matrix[:, k]
             # This is the last hidden layer
-            if l+1 == self.depth:
+            if l + 1 == self.depth:
                 layer_error = self.output_layer_error()
                 derivative_sigma = self.outputv * (1 - self.outputv)
                 unit_error = np.dot(np.multiply(weights, derivative_sigma), layer_error)
             else:
                 layer_error = self.hidden_layers_errors[(self.num_of_hidden_layers - 1) - 2]
-                derivative_sigma = self.hidden_layers_outputs[l-1]
+                derivative_sigma = self.nets[l - 1]
                 unit_error = np.dot(np.multiply(weights, derivative_sigma), layer_error)
 
             return unit_error
         else:
             print('Invalid layer number')
 
-
     def forward_pass(self, inputv_):
         self.inputv = inputv_
         temp_vector = self.inputv
-        self.hidden_layers_outputs.clear()
+        self.nets.clear()
+        self.nets_derivatives.clear()
+        self.nets.append(inputv_)
         for k in range(self.depth):
             z = (self.network_matrices[k]).dot(temp_vector)
             layer_output = self.activation.output(z)
+            layer_output_derivative = self.activation.derivative(z)
             temp_vector = layer_output
             # Add this layer output to the list of hidden layers outputs
             if k < self.depth - 1:
-                self.hidden_layers_outputs.append(layer_output)
+                self.nets.append(layer_output)
+                self.nets_derivatives.append(layer_output_derivative)
         self.outputv = temp_vector
 
     def backpropagate(self, x: np.array(0), y: np.array(0)):
-        # Start by making a forward pass
-        self.forward_pass(x)
-
-        # Computer the error (mean square error)
-        error = self.cost(y)
 
         # Start by adjusting the weight matrix of the output layer
         output_matrix = self.network_matrices[-1]
-        before_last_layer = self.hidden_layers_outputs[-1]
+        before_last_layer = self.nets[-1]
 
         rows = output_matrix.shape[0]
         cols = output_matrix.shape[1]
         for j in range(rows):
             a_j = self.outputv[j]
-            derivative_sigma = a_j * (1 - a_j)  # sigmoid
+            derivative_sigma = self.outputv_derivative[j]  # sigmoid
             y_j = y[j]
             for k in range(cols):
                 a_k = before_last_layer[k]
@@ -115,31 +117,35 @@ class NeuralNetwork:
 
         """#################-------------------------##########################"""
 
-
         # Loop through the hidden layers to adjust the weight matrices
         hidden = -2  # Hidden matrix starting from the end of the list
-        while hidden >= 0:
+        while hidden >= -self.depth:
             hidden_matrix = self.network_matrices[hidden]
-            previous_layer = self.hidden_layers_outputs[hidden]
-            hidden_layer_errors = np.empty([])
+            previous_layer_output = self.nets[hidden + 2]
             rows = hidden_matrix.shape[0]
+            hidden_layer_errors = np.zeros(rows)
             cols = hidden_matrix.shape[1]
             for k in range(rows):
-                a_k = self.hidden_layers_outputs[hidden + 1]
-                derivative_sigma = a_k * (1 - a_k)
-                error_of_unit_k = self.unit_error(hidden, k)
+                layer_output_derivatives = self.nets_derivatives[hidden + 1]
+                derivative_sigma = layer_output_derivatives[k]
+                error_of_unit_k = self.unit_error(-(hidden+1), k)
                 for i in range(cols):
-                    a_i = previous_layer[i]
-                    del_cost = a_i * derivative_sigma * error_of_unit_k
+                    a_i = previous_layer_output[i]
+                    del_cost = self.learning_rate * a_i * derivative_sigma * error_of_unit_k
                     hidden_matrix[k][i] -= del_cost
-                np.append(hidden_layer_errors, error_of_unit_k)
+                hidden_layer_errors[k] = error_of_unit_k
             self.network_matrices[hidden] = hidden_matrix
             self.hidden_layers_errors.append(hidden_layer_errors)
 
+            hidden -= 1
 
 
+        # End by making a forward pass
+        self.forward_pass(x)
 
     def backpropagation(self, epochs: int):
+        self.forward_pass(self.inputv)
         for i in range(epochs):
-            self.forward_pass(self.inputv)
             self.backpropagate(self.inputv, self.desiredv)
+            print("weights after epoch", i)
+            print(self.network_matrices)

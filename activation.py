@@ -18,10 +18,15 @@ class Activation:
         return self.strategy.output()
 
 
+    def derivative(self, x_):
+        self.strategy.activate(x_)
+        return self.strategy.delta()
+
+
 class Strategy(metaclass=abc.ABCMeta):
     y: 'numpy array'
     y = None
-
+    d_y = None
     @abc.abstractmethod
     def activate(self, x_: 'numpy array'):
         pass
@@ -30,22 +35,26 @@ class Strategy(metaclass=abc.ABCMeta):
     def output(self):
         return self.y
 
+    def delta(self):
+        return self.d_y
+
 
 class Sigmoid(Strategy, ABC):
     # Implement the algorithm using the strategy interface
     def activate(self, x_):
         self.y = np.zeros(len(x_))
         self.y = 1 / (1 + np.exp(-x_))
-
+        self.d_y = self.y * (1 - self.y)
 
 
 class ReLU(Strategy, ABC):
     # Implementation
     def activate(self, x_):
         self.y = np.zeros(len(x_))
+        self.d_y = np.zeros(len(x_))
         for i in range(len(x_)):
-            self.y[i] = 0 if x_[i] < 0 else 1
-
+            self.y[i] = 0 if x_[i] < 0 else x_[i]
+            self.d_y[i] = 0 if x_[i] < 0 else 1
 
 def test():
     print("Sigmoid")
