@@ -19,7 +19,7 @@ class NeuralNetwork:
     hidden_layers_errors = []  # size = d-1
 
     # Activation of all the neurons
-    activation_function = ac.ReLU()
+    activation_function = ac.Sigmoid()
     activation: 'a class'
     activation = None
 
@@ -59,19 +59,18 @@ class NeuralNetwork:
         return 2 * (self.outputv - self.desiredv)
 
     def unit_error(self, l: 'layer index', k: 'unit index'):
-        unit_error = 0
         # We will loop through next layer l+1
         if (l + 1) <= self.depth:
             layer_matrix = self.network_matrices[l]
             weights = layer_matrix[:, k]
-            # This is the last hidden layer
+            # This is the last hidden layer (layer l=L-1)
             if l + 1 == self.depth:
                 layer_error = self.output_layer_error()
-                derivative_sigma = self.outputv * (1 - self.outputv)
+                derivative_sigma = self.outputv_derivative
                 unit_error = np.dot(np.multiply(weights, derivative_sigma), layer_error)
-            else:
+            else:  # Any other hidden layer
                 layer_error = self.hidden_layers_errors[(self.num_of_hidden_layers - 1) - 2]
-                derivative_sigma = self.nets[l - 1]
+                derivative_sigma = self.nets_derivatives[l - 1]
                 unit_error = np.dot(np.multiply(weights, derivative_sigma), layer_error)
 
             return unit_error
@@ -84,6 +83,7 @@ class NeuralNetwork:
         self.nets.clear()
         self.nets_derivatives.clear()
         self.nets.append(inputv_)
+        layer_output_derivative = None
         for k in range(self.depth):
             z = (self.network_matrices[k]).dot(temp_vector)
             layer_output = self.activation.output(z)
@@ -94,6 +94,8 @@ class NeuralNetwork:
                 self.nets.append(layer_output)
                 self.nets_derivatives.append(layer_output_derivative)
         self.outputv = temp_vector
+        # put output vector derivative
+        self.outputv_derivative = layer_output_derivative
 
     def backpropagate(self, x: np.array(0), y: np.array(0)):
 
@@ -105,7 +107,7 @@ class NeuralNetwork:
         cols = output_matrix.shape[1]
         for j in range(rows):
             a_j = self.outputv[j]
-            derivative_sigma = self.outputv_derivative[j]  # sigmoid
+            derivative_sigma = self.outputv_derivative[j]
             y_j = y[j]
             for k in range(cols):
                 a_k = before_last_layer[k]
@@ -147,5 +149,5 @@ class NeuralNetwork:
         self.forward_pass(self.inputv)
         for i in range(epochs):
             self.backpropagate(self.inputv, self.desiredv)
-            print("weights after epoch", i)
-            print(self.network_matrices)
+            # print("weights after epoch", i)
+            # print(self.network_matrices)

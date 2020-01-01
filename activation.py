@@ -1,5 +1,4 @@
 import abc
-import math
 from abc import ABC
 
 import numpy as np
@@ -17,7 +16,6 @@ class Activation:
         self.strategy.activate(x_)
         return self.strategy.output()
 
-
     def derivative(self, x_):
         self.strategy.activate(x_)
         return self.strategy.delta()
@@ -27,10 +25,10 @@ class Strategy(metaclass=abc.ABCMeta):
     y: 'numpy array'
     y = None
     d_y = None
+
     @abc.abstractmethod
     def activate(self, x_: 'numpy array'):
         pass
-
 
     def output(self):
         return self.y
@@ -56,12 +54,12 @@ class ReLU(Strategy, ABC):
             self.y[i] = 0 if x_[i] < 0 else x_[i]
             self.d_y[i] = 0 if x_[i] < 0 else 1
 
+
 def test():
     print("Sigmoid")
     sigmoid = Sigmoid()
     activation1 = Activation(sigmoid)
     print(activation1.output(np.array([0.8305, -0.526])))
-
 
     print("ReLU")
     relu = ReLU()
